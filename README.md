@@ -1,4 +1,6 @@
+![GitGenie](./images/icon.png)
 # GitGenie
+
 
 Welcome to **GitGenie** – your AI-powered assistant for generating Git commands from natural language! With GitGenie, you can easily translate plain English instructions into precise Git commands, simplifying your workflow and boosting productivity.
 
