@@ -1,0 +1,92 @@
+{
+  "name": "natural-git",
+  "icon": "images/icon.png",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/duplixx/NaturalGit"
+  },
+  "publisher": "Duplixx",
+  "displayName": "NaturalGit",
+  "description": "Extension to generate Git commands from Natural language",
+  "version": "2.0.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:natural-git.view",
+    "onView:natural-git.git-view",
+    "onCommand:natural-git.askGit"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "natural-git",
+          "title": "ChatGPT",
+          "icon": "images/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "natural-git": [
+        {
+          "type": "webview",
+          "id": "natural-git.view",
+          "name": "ChatGPT"
+        },
+        {
+          "type": "webview",
+          "id": "natural-git.git-view",
+          "name": "Git Command Generator"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "natural-git.askGit",
+        "title": "ChatGPT: Ask Git Command"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "vscode:package": "vsce package",
+    "vscode:install": "code --install-extension natural-git-2.0.0.vsix",
+    "vscode:clean": "del natural-git-2.0.0.vsix",
+    "setup": "npm install",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.0.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/test-electron": "^2.2.0",
+    "@vscode/vsce": "^2.15.0",
+    "del-cli": "^5.0.0",
+    "eslint": "^8.28.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.1.0",
+    "ts-loader": "^9.4.1",
+    "typescript": "^4.9.3",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.0"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.16.0",
+    "openai": "^3.1.0"
+  }
+}
