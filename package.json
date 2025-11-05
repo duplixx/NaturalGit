@@ -36,7 +36,7 @@
         {
           "type": "webview",
           "id": "natural-git.view",
-          "name": "ChatGPT"
+          "name": "Workspace Cognitive"
         },
         {
           "type": "webview",

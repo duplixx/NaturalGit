@@ -1,100 +1,105 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import * as vscode from "vscode";
+import * as path from "path";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI("AIzaSyAOqw73yo8DkfoeYl4dY7mzwEKUPilBAIk");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const genAI = new GoogleGenerativeAI("AIzaSyCskeZb60WJUzBrIHORjpFWLM_jY1AUSCw");
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export default class GitCommandGenerator implements vscode.WebviewViewProvider {
-    private webView?: vscode.WebviewView;
-    private responseQueue: Array<{ type: string; value: any }> = [];
+  private webView?: vscode.WebviewView;
+  private responseQueue: Array<{ type: string; value: any }> = [];
 
-    constructor(private context: vscode.ExtensionContext) {}
+  constructor(private context: vscode.ExtensionContext) {}
 
-    public resolveWebviewView(webviewView: vscode.WebviewView) {
-        this.webView = webviewView;
-        webviewView.webview.options = { enableScripts: true };
-        webviewView.webview.html = this.getHtml(webviewView.webview);
+  public resolveWebviewView(webviewView: vscode.WebviewView) {
+    this.webView = webviewView;
+    webviewView.webview.options = { enableScripts: true };
+    webviewView.webview.html = this.getHtml(webviewView.webview);
 
-        webviewView.webview.onDidReceiveMessage(data => {
-            if (data.type === 'userMessage') {
-                this.handleUserMessage(data.value);
-            } else if (data.type === 'insertCommand') {
-                this.insertCommand(data.value);
-            }
-        });
+    webviewView.webview.onDidReceiveMessage((data) => {
+      if (data.type === "userMessage") {
+        this.handleUserMessage(data.value);
+      } else if (data.type === "insertCommand") {
+        this.insertCommand(data.value);
+      }
+    });
 
-        // Process any queued responses
-        while (this.responseQueue.length > 0) {
-            const response = this.responseQueue.shift();
-            if (response) {
-                this.webView.webview.postMessage(response);
-            }
-        }
+    // Process any queued responses
+    while (this.responseQueue.length > 0) {
+      const response = this.responseQueue.shift();
+      if (response) {
+        this.webView.webview.postMessage(response);
+      }
     }
+  }
 
-    public async handleUserMessage(message: string) {
-        try {
-            const prompt = `Convert the following request to Git commands: ${message}`;
-            const result = await model.generateContent(prompt);
-            
-            if (!result || !result.response) {
-                throw new Error("No response from Gemini");
-            }
+  public async handleUserMessage(message: string) {
+    try {
+      const prompt = `Convert the following request to Git commands: ${message}`;
+      const result = await model.generateContent(prompt);
 
-            const responseText = result.response.text();
-            if (!responseText) {
-                throw new Error("Empty response from Gemini");
-            }
+      if (!result || !result.response) {
+        throw new Error("No response from Gemini");
+      }
 
-            const gitCommands = this.parseGitCommands(responseText);
+      const responseText = result.response.text();
+      if (!responseText) {
+        throw new Error("Empty response from Gemini");
+      }
 
-            this.sendMessageToWebview({
-                type: 'aiResponse', 
-                value: { message, commands: gitCommands }
-            });
-        } catch (error: any) {
-            console.error("Error in handleUserMessage:", error);
-            vscode.window.showErrorMessage(`Error generating Git commands: ${error.message}`);
-            
-            this.sendMessageToWebview({
-                type: 'aiResponse', 
-                value: { message, commands: [`Error: ${error.message}`] }
-            });
-        }
+      const gitCommands = this.parseGitCommands(responseText);
+
+      this.sendMessageToWebview({
+        type: "aiResponse",
+        value: { message, commands: gitCommands },
+      });
+    } catch (error: any) {
+      console.error("Error in handleUserMessage:", error);
+      vscode.window.showErrorMessage(
+        `Error generating Git commands: ${error.message}`
+      );
+
+      this.sendMessageToWebview({
+        type: "aiResponse",
+        value: { message, commands: [`Error: ${error.message}`] },
+      });
     }
+  }
 
-    private sendMessageToWebview(message: { type: string; value: any }) {
-        if (this.webView) {
-            this.webView.webview.postMessage(message);
-        } else {
-            // Queue the message if the webview isn't ready yet
-            this.responseQueue.push(message);
-        }
+  private sendMessageToWebview(message: { type: string; value: any }) {
+    if (this.webView) {
+      this.webView.webview.postMessage(message);
+    } else {
+      // Queue the message if the webview isn't ready yet
+      this.responseQueue.push(message);
     }
+  }
 
-    private parseGitCommands(text: string): string[] {
-        const lines = text.split('\n');
-        const gitCommands = lines.filter(line => {
-            const trimmedLine = line.trim();
-            return trimmedLine.startsWith('git ') || trimmedLine.startsWith('$');
-        }).map(line => line.trim().replace(/^\$\s*/, ''));
+  private parseGitCommands(text: string): string[] {
+    const lines = text.split("\n");
+    const gitCommands = lines
+      .filter((line) => {
+        const trimmedLine = line.trim();
+        return trimmedLine.startsWith("git ") || trimmedLine.startsWith("$");
+      })
+      .map((line) => line.trim().replace(/^\$\s*/, ""));
 
-        return gitCommands.length > 0 ? gitCommands : [text];
-    }
+    return gitCommands.length > 0 ? gitCommands : [text];
+  }
 
-    private insertCommand(command: string) {
-        const terminal = vscode.window.activeTerminal || vscode.window.createTerminal('Git');
-        terminal.sendText(command);
-        terminal.show();
-    }
+  private insertCommand(command: string) {
+    const terminal =
+      vscode.window.activeTerminal || vscode.window.createTerminal("Git");
+    terminal.sendText(command);
+    terminal.show();
+  }
 
-    private getHtml(webview: vscode.Webview) {
-        const scriptUri = webview.asWebviewUri(vscode.Uri.file(
-            path.join(this.context.extensionPath, 'media', 'main.js')
-        ));
+  private getHtml(webview: vscode.Webview) {
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.file(path.join(this.context.extensionPath, "media", "main.js"))
+    );
 
-        return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
@@ -105,7 +110,7 @@ export default class GitCommandGenerator implements vscode.WebviewViewProvider {
                 <style>
                     body { font-family: Arial, sans-serif; padding: 10px; }
                     #chat-container { height: 300px; overflow-y: auto; border: 1px solid #ccc; margin-bottom: 10px; padding: 10px; }
-                    #user-input { width: 70%; padding: 5px; }
+                    #user-input { width: 100%; padding: 5px; }
                     #send-button { width: 25%; padding: 5px; }
                     .message { margin-bottom: 10px; }
                     .user-message { color: blue;}
@@ -140,5 +145,5 @@ export default class GitCommandGenerator implements vscode.WebviewViewProvider {
                 <script src="${scriptUri}"></script>
             </body>
             </html>`;
-    }
+  }
 }
