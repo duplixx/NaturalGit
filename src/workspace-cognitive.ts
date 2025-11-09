@@ -7,7 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const exec = promisify(child_process.exec);
 
-const genAI = new GoogleGenerativeAI("AIzaSyCskeZb60WJUzBrIHORjpFWLM_jY1AUSCw");
+const genAI = new GoogleGenerativeAI("AIzaSyAeLd3rITUK3dmxMvGwCaJcWD79y5Arsso");
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export default class WorkspaceCognitive implements vscode.WebviewViewProvider {

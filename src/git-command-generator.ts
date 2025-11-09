@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI("AIzaSyCskeZb60WJUzBrIHORjpFWLM_jY1AUSCw");
+const genAI = new GoogleGenerativeAI("AIzaSyAeLd3rITUK3dmxMvGwCaJcWD79y5Arsso");
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export default class GitCommandGenerator implements vscode.WebviewViewProvider {
@@ -106,42 +106,237 @@ export default class GitCommandGenerator implements vscode.WebviewViewProvider {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Git Command Generator</title>
                 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-				<script src="https://cdn.tailwindcss.com"></script>
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 10px; }
-                    #chat-container { height: 300px; overflow-y: auto; border: 1px solid #ccc; margin-bottom: 10px; padding: 10px; }
-                    #user-input { width: 100%; padding: 5px; }
-                    #send-button { width: 25%; padding: 5px; }
-                    .message { margin-bottom: 10px; }
-                    .user-message { color: blue;}
-                    .ai-message { color: green; }
-                    .command-button {
-                        margin-top: 5px;
-                        background-color: #D3D3D3;
-                        border: 1px solid #D3D3D3;
-                        border-radius: 40px;
-                        padding: 10px 20px;
-                        color: #333;
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                        background: var(--vscode-editor-background);
+                        color: var(--vscode-foreground);
+                        height: 100vh;
+                        display: flex;
+                        flex-direction: column;
+                        overflow: hidden;
+                        padding: 0;
+                    }
+                    
+                    #chat-container {
+                        flex: 1;
+                        overflow-y: auto;
+                        padding: 16px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
+                    }
+                    
+                    .message-wrapper {
+                        display: flex;
+                        gap: 12px;
+                        animation: fadeIn 0.3s ease-in;
+                        max-width: 100%;
+                    }
+                    
+                    @keyframes fadeIn {
+                        from {
+                            opacity: 0;
+                            transform: translateY(10px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                    
+                    .message-avatar {
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        flex-shrink: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: 600;
+                        font-size: 14px;
+                    }
+                    
+                    .user-avatar {
+                        background: #007acc;
+                        color: white;
+                    }
+                    
+                    .ai-avatar {
+                        background: #6e7681;
+                        color: white;
+                    }
+                    
+                    .message-content {
+                        flex: 1;
+                        min-width: 0;
+                    }
+                    
+                    .message-bubble {
+                        padding: 12px 16px;
+                        border-radius: 8px;
+                        line-height: 1.5;
+                        word-wrap: break-word;
+                        white-space: pre-wrap;
+                    }
+                    
+                    .user-bubble {
+                        background: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        margin-left: auto;
+                        max-width: 85%;
+                        border-radius: 8px 8px 2px 8px;
+                    }
+                    
+                    .ai-bubble {
+                        background: var(--vscode-input-background);
+                        color: var(--vscode-input-foreground);
+                        border: 1px solid var(--vscode-input-border);
+                        max-width: 95%;
+                        border-radius: 8px 8px 8px 2px;
+                    }
+                    
+                    .command-block {
+                        margin-top: 12px;
+                        padding: 12px;
+                        background: var(--vscode-textCodeBlock-background);
+                        border-radius: 6px;
+                        border-left: 3px solid #007acc;
+                    }
+                    
+                    .command-line {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 0.9em;
+                        padding: 10px 14px;
+                        background: rgba(0, 122, 204, 0.15);
+                        border: 1px solid rgba(0, 122, 204, 0.3);
+                        border-radius: 6px;
+                        margin: 8px 0;
                         cursor: pointer;
-                        transition: background-color 0.3s, border-color 0.3s, transform 0.2s;
+                        transition: all 0.2s ease;
                     }
-                    .command-button:hover {
-                        background-color: #C0C0C0;
-                        border-color: #C0C0C0;
+                    
+                    .command-line:hover {
+                        background: rgba(0, 122, 204, 0.25);
+                        border-color: rgba(0, 122, 204, 0.5);
+                        transform: translateX(2px);
+                        box-shadow: 0 2px 4px rgba(0, 122, 204, 0.2);
                     }
-                    .command-button:active {
-                        background-color: #A9A9A9;
-                        border-color: #A9A9A9;
-                        transform: scale(0.95);
+                    
+                    .command-text {
+                        flex: 1;
+                        color: var(--vscode-foreground);
+                        font-weight: 500;
+                    }
+                    
+                    .command-execute {
+                        padding: 6px 16px;
+                        background: #007acc;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        font-weight: 600;
+                        transition: all 0.2s;
+                        white-space: nowrap;
+                    }
+                    
+                    .command-execute:hover {
+                        background: #005a9e;
+                        transform: scale(1.05);
+                    }
+                    
+                    .command-execute:active {
+                        transform: scale(0.98);
+                    }
+                    
+                    .command-execute:disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                        transform: none;
+                    }
+                    
+                    .input-container {
+                        padding: 12px;
+                        border-top: 1px solid var(--vscode-panel-border);
+                        display: flex;
+                        gap: 8px;
+                        background: var(--vscode-editor-background);
+                    }
+                    
+                    #user-input {
+                        flex: 1;
+                        padding: 10px 14px;
+                        background: var(--vscode-input-background);
+                        color: var(--vscode-input-foreground);
+                        border: 1px solid var(--vscode-input-border);
+                        border-radius: 6px;
+                        font-size: 14px;
+                        font-family: inherit;
+                        outline: none;
+                        transition: border-color 0.2s;
+                    }
+                    
+                    #user-input:focus {
+                        border-color: var(--vscode-focusBorder);
+                    }
+                    
+                    #send-button {
+                        padding: 10px 20px;
+                        background: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 500;
+                        transition: opacity 0.2s;
+                    }
+                    
+                    #send-button:hover:not(:disabled) {
+                        opacity: 0.9;
+                    }
+                    
+                    #send-button:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                    }
+                    
+                    /* Scrollbar styling */
+                    #chat-container::-webkit-scrollbar {
+                        width: 8px;
+                    }
+                    
+                    #chat-container::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    
+                    #chat-container::-webkit-scrollbar-thumb {
+                        background: var(--vscode-scrollbarSlider-background);
+                        border-radius: 4px;
+                    }
+                    
+                    #chat-container::-webkit-scrollbar-thumb:hover {
+                        background: var(--vscode-scrollbarSlider-hoverBackground);
                     }
                 </style>
             </head>
-            <body class="bg-gray-800 p-5">
-            <div id="chat-container" class="overflow-y-auto rounded-md"></div>
-            <div class="flex">
-            <input id="user-input" type="text" placeholder="Ask about Git commands..." class="w-3/4 p-2 border border-gray-300 rounded-l-lg">
-            <button id="send-button" class="w-1/4 bg-blue-500 text-white p-2 rounded-r-lg">Send</button>
-        </div>
+            <body>
+                <div id="chat-container"></div>
+                <div class="input-container">
+                    <input id="user-input" type="text" placeholder="Ask about Git commands..." />
+                    <button id="send-button">Send</button>
+                </div>
                 <script src="${scriptUri}"></script>
             </body>
             </html>`;

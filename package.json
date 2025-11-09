@@ -16,7 +16,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:natural-git.view",
+    "onView:natural-workspace.view",
     "onView:natural-git.git-view",
     "onCommand:natural-git.askGit"
   ],
@@ -26,7 +26,7 @@
       "activitybar": [
         {
           "id": "natural-git",
-          "title": "ChatGPT",
+          "title": "NaturalGit",
           "icon": "images/icon.png"
         }
       ]
@@ -35,20 +35,20 @@
       "natural-git": [
         {
           "type": "webview",
-          "id": "natural-git.view",
+          "id": "natural-workspace.view",
           "name": "Workspace Cognitive"
         },
         {
           "type": "webview",
           "id": "natural-git.git-view",
-          "name": "Git Command Generator"
+          "name": "NaturalGit: Git Command Generator"
         }
       ]
     },
     "commands": [
       {
-        "command": "natural-git.askGit",
-        "title": "ChatGPT: Ask Git Command"
+        "command": "natural-workspace.askGit",
+        "title": "NaturalGit: Ask Workspace Question"
       }
     ]
   },
@@ -86,7 +86,6 @@
     "webpack-cli": "^5.0.0"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.16.0",
-    "openai": "^3.1.0"
+    "@google/generative-ai": "^0.16.0"
   }
 }

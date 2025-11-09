@@ -39,7 +39,7 @@ export async function activate(context: vscode.ExtensionContext) {
         // Register webview view provider for Workspace Cognitive feature
         // This creates a view in the sidebar (Activity Bar)
         // retainContextWhenHidden: keeps webview state when hidden
-        vscode.window.registerWebviewViewProvider("natural-git.view", workspaceCognitive, {
+        vscode.window.registerWebviewViewProvider("natural-workspace.view", workspaceCognitive, {
             webviewOptions: { retainContextWhenHidden: true }
         }),
         
